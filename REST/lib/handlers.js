@@ -59,7 +59,19 @@ handlers._users.post = function(data,callback) {
 };
 
 handlers._users.get = function(data,callback) {
-    
+    const phone = typeof(data.queryStringObject.phone) == "string" && data.queryStringObject.phone.trim().length == 10 ? data.queryStringObject.phone.trim() : false;
+    if(phone) {
+        _data.read('users',phone,function(err,data) {
+            if(!err && data) {
+                delete data.password;
+                callback(200,data);
+            } else {
+                callback(404);
+            };
+        })
+    } else {
+        callback(400,{ 'Error' : 'Missing required field' });
+    };
 };
 
 handlers._users.put = function(data,callback) {

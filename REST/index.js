@@ -65,8 +65,6 @@ const unifiedServer = function(req,res) {
           'headers' : headers,
           'payload' : helpers.parseJsonToObject(buffer)
         };
-
-        console.log(router);
   
         // Route the request to the handler specified in the router
         chosenHandler(data,function(statusCode,payload){
@@ -84,7 +82,6 @@ const unifiedServer = function(req,res) {
           res.setHeader('Content-Type', 'application/json');
           res.writeHead(statusCode);
           res.end(payloadString);
-          console.log(trimmedPath,statusCode);
         });
   
     });
@@ -94,5 +91,6 @@ const unifiedServer = function(req,res) {
 const router = {
     'ping' : handlers.ping,
     'users' : handlers.users,
-    'tokens' : handlers.tokens
+    'tokens' : handlers.tokens,
+    'checks' : handlers.checks
 };

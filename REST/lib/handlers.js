@@ -185,6 +185,7 @@ handlers._tokens.post = function(data,callback) {
     };
 };
 
+
 handlers._tokens.get = function(data,callback) {
     const id = typeof(data.queryStringObject.id) == "string" && data.queryStringObject.id.trim().length <= 19 ? data.queryStringObject.id.trim() : false;
     console.log(id)
@@ -201,8 +202,34 @@ handlers._tokens.get = function(data,callback) {
     };
 };
 
+
 handlers._tokens.put = function(data,callback) {
-    
+    const id = typeof(data.payload.id) == "string" && data.payload.id.trim().length <= 19 ? data.payload.id.trim() : false;
+    const extend = typeof(data.payload.extend) == "boolean" && data.payload.extend == true ? true : false;
+   
+    if(id && extend) {
+        _data.read('tokens',id,function(err,tokenData) {
+            if(!err && tokenData) {
+                if(tokenData.expires > Date.now()) {
+                    tokenData.expires = Date.now() + 1000 * 60 * 60;
+
+                    _data.update('tokens',id,tokenData,function(err) {
+                        if(!err) {
+                            callback(200);
+                        } else {
+                            callback(500,{ 'Error' : 'Could not update the token' });
+                        };
+                    });
+                } else {
+                    callback(400,{ 'Error' : 'The token has already expired' });
+                };
+            } else {
+                callback(400,{ 'Error' : 'The specified token does not exists' });
+            };
+        });
+    } else {
+        callback(400,{ 'Error' : 'Missing required field or it is invalid' });
+    };
 };
 
 handlers._tokens.delete = function(data,callback) {

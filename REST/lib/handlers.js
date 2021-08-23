@@ -233,7 +233,24 @@ handlers._tokens.put = function(data,callback) {
 };
 
 handlers._tokens.delete = function(data,callback) {
-    
+    const id = typeof(data.queryStringObject.id) == "string" && data.queryStringObject.id.trim().length <= 19 ? data.queryStringObject.id.trim() : false;
+    if(id) {
+        _data.read('tokens',id,function(err,tokenData) {
+            if(!err && tokenData) {
+                _data.delete('tokens',id,function(err) {
+                   if(!err) {
+                       callback(200);
+                   } else {
+                       callback(500,{ 'Error' : 'Could not delete token' });
+                   }
+                });
+            } else {
+                callback(400,{ 'Error' : 'Could not find the specified token' });
+            };
+        })
+    } else {
+        callback(400,{ 'Error' : 'Missing required field' });
+    };
 };
 
 

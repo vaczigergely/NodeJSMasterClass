@@ -12,7 +12,7 @@ helpers.parseJsonToObject = function(str){
     return obj;
   } catch(e){
     return {};
-  }
+  };
 };
 
 // Create a SHA256 hash
@@ -22,7 +22,27 @@ helpers.hash = function(str){
     return hash;
   } else {
     return false;
-  }
+  };
 };
+
+helpers.createRandomString = function(strLength) {
+    strLength = typeof(strLength) == 'number' && strLength > 0 ? strLength : false
+
+    if(strLength) {
+        const possibleCharacters = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        let str = '';
+        for(i = 1; i < strLength; i++) {
+            let randomCharacter = possibleCharacters.charAt(Math.floor(Math.random() * possibleCharacters.length));
+            str += randomCharacter;
+        }
+
+        return str;
+    } else {
+        return false;
+    };
+};
+
+
+
 // Export the module
 module.exports = helpers;

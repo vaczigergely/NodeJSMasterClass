@@ -157,6 +157,7 @@ handlers._tokens.post = function(data,callback) {
             if(!err && userData) {
                 const hashedPassword = helpers.hash(password);
                 if(hashedPassword == userData.password) {
+                    //TODO Why it is giving back 19 characters instead of 20
                     const tokenId = helpers.createRandomString(20);
                     const expires =Date.now() * 1000 * 60 * 60;
                     const tokenObject = {
@@ -185,7 +186,19 @@ handlers._tokens.post = function(data,callback) {
 };
 
 handlers._tokens.get = function(data,callback) {
-    
+    const id = typeof(data.queryStringObject.id) == "string" && data.queryStringObject.id.trim().length <= 19 ? data.queryStringObject.id.trim() : false;
+    console.log(id)
+    if(id) {
+        _data.read('tokens',id,function(err,tokenData) {
+            if(!err && tokenData) {
+                callback(200,tokenData);
+            } else {
+                callback(404);
+            };
+        })
+    } else {
+        callback(400,{ 'Error' : 'Missing required field' });
+    };
 };
 
 handlers._tokens.put = function(data,callback) {

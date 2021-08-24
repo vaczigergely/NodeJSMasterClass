@@ -135,11 +135,38 @@ handlers._users.delete = function(data,callback) {
         const token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
         handlers._tokens.verifyToken(token,phone,function(tokenIsValid) {
             if(tokenIsValid) {
-                _data.read('users',phone,function(err,data) {
-                    if(!err && data) {
+                _data.read('users',phone,function(err,userData) {
+                    if(!err && userData) {
                         _data.delete('users',phone,function(err) {
                            if(!err) {
-                               callback(200);
+
+                            let userChecks = typeof(userData.checks) == 'object' && userData.checks instanceof Array ? userData.checks : [];
+                            let checksToDelete = userChecks.length;
+
+                            if(checksToDelete > 0) {
+                                let checksDeleted = 0;
+                                let deletionErrors = false;
+
+                                userChecks.forEach(function(checkId) {
+                                    _data.delete('checks',checkId,function(err) {
+                                        if(err) {
+                                            deletionErrors = true;
+                                        };
+
+                                        checksDeleted++;
+                                        if(checksDeleted == checksToDelete) {
+                                            if(!deletionErrors) {
+                                                callback(200);
+                                            } else {
+                                                callback(500, { 'Error' : 'Error during user check deletion' });
+                                            };
+                                        };
+                                    });
+                                });
+                            } else {
+                                callback(200);
+                            };
+
                            } else {
                                callback(500,{ 'Error' : 'Could not delete specified user' });
                            }
@@ -450,6 +477,63 @@ handlers._checks.put = function(data,callback) {
         callback(400,{ 'Error' : 'Missing required field' });
     };
 };
+
+
+
+handlers._checks.delete = function(data,callback) {
+    const id = typeof(data.queryStringObject.id) == "string" && data.queryStringObject.id.trim().length >= 19 ? data.queryStringObject.id.trim() : false;
+    if(id) {
+
+        _data.read('checks',id,function(err,checkData) {
+            if(!err && checkData) {
+                const token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
+                handlers._tokens.verifyToken(token,checkData.userPhone,function(tokenIsValid) {
+                    if(tokenIsValid) {
+
+                        _data.delete('checks',id,function(err) {
+                            if(!err) {
+                                _data.read('users',checkData.userPhone,function(err,userData) {
+                                    if(!err && userData) {
+                                        let userChecks = typeof(userData.checks) == 'object' && userData.checks instanceof Array ? userData.checks : [];
+
+                                        let checkPosition = userChecks.indexOf(id);
+                                        if(checkPosition > -1) {
+                                            userChecks.splice(checkPosition,1);
+
+                                            _data.update('users',checkData.userPhone,userData,function(err) {
+                                                if(!err) {
+                                                    callback(200);
+                                                } else {
+                                                    callback(500,{ 'Error' : 'Could not update specified user' });
+                                                }
+                                            });
+                                        } else {
+                                            callback(500,{ 'Error' : 'COuld not find the check on the users object' });
+                                        };
+                                    } else {
+                                        callback(500,{ 'Error' : 'Could not find the user who created the check' });
+                                    };
+                                });
+                            } else {
+                                callback(500, { 'Error' : 'Could not delete check' });
+                            }
+                        })
+
+                    } else {
+                        callback(403, { 'Error' : 'Missing required token' });
+                    };
+                });  
+            } else {
+                callback(400,{ 'Error' : 'The specified checkID does not exist' });
+            };
+        })
+
+          
+    } else {
+        callback(400,{ 'Error' : 'Missing required field' });
+    };
+};
+
 
 
 handlers.ping = function(data, callback) {

@@ -378,17 +378,74 @@ handlers._checks.get = function(data,callback) {
 
                 const token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
                 handlers._tokens.verifyToken(token,checkData.userPhone,function(tokenIsValid) {
-                if(tokenIsValid) {
-                   callback(200,checkData);
-                } else {
-                    callback(403)
-                };
-        });
+                    if(tokenIsValid) {
+                    callback(200,checkData);
+                    } else {
+                        callback(403)
+                    };
+                });
             } else {
                 callback(404);
             };
         });
         
+    } else {
+        callback(400,{ 'Error' : 'Missing required field' });
+    };
+};
+
+
+handlers._checks.put = function(data,callback) {
+    const id = typeof(data.payload.id) == "string" && data.payload.id.trim().length >= 19 ? data.payload.id.trim() : false;
+
+    const protocol = typeof(data.payload.protocol) == 'string' && ['https','http'].indexOf(data.payload.protocol) > -1 ? data.payload.protocol : false;
+    const url = typeof(data.payload.url) == 'string' && data.payload.url.trim().length > 0 ? data.payload.url.trim() : false;
+    const method = typeof(data.payload.method) == 'string' && ['post','get','put','delete'].indexOf(data.payload.method) > -1 ? data.payload.method : false;
+    const successCodes = typeof(data.payload.successCodes) == 'object' && data.payload.successCodes instanceof Array && data.payload.successCodes.length > 0 ? data.payload.successCodes : false;
+    const timeoutSeconds = typeof(data.payload.timeoutSeconds) == 'number' && data.payload.timeoutSeconds % 1 === 0 &&  data.payload.timeoutSeconds >= 1 && data.payload.timeoutSeconds <= 5 ? data.payload.timeoutSeconds : false;
+
+    if(id) {
+        if(protocol || url || method || successCodes || timeoutSeconds) {
+            _data.read('checks',id,function(err,checkData) {
+               if(!err && checkData) {
+                    const token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
+                    handlers._tokens.verifyToken(token,checkData.userPhone,function(tokenIsValid) {
+                        console.log(tokenIsValid)
+                        if(tokenIsValid) {
+                            if(protocol) {
+                                checkData.protocol = protocol;
+                            };
+                            if(url) {
+                                checkData.url = url;
+                            };
+                            if(method) {
+                                checkData.method = method;
+                            };
+                            if(successCodes) {
+                                checkData.successCodes = successCodes;
+                            };
+                            if(timeoutSeconds) {
+                                checkData.timeoutSeconds = timeoutSeconds;
+                            };
+
+                            _data.update('checks',id,checkData,function(err) {
+                                if(!err) {
+                                    callback(200);
+                                } else {
+                                    callback(500,{ 'Error' : 'Could not update the check' });
+                                };
+                            })
+                        } else {
+                            callback(403)
+                        };
+                    });
+               } else {
+                    callback(400,{ 'Error' : 'checkID did not exists' });
+               };
+            });
+        } else {
+            callback(400,{ 'Error' : 'Missing fields to update' });
+        };
     } else {
         callback(400,{ 'Error' : 'Missing required field' });
     };

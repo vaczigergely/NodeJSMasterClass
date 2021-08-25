@@ -1,6 +1,8 @@
 // Dependencies
 const config = require('./config');
 const crypto = require('crypto');
+const https = require('https');
+const querystring = require('querystring');
 
 // Container for all the helpers
 const helpers = {};
@@ -40,6 +42,55 @@ helpers.createRandomString = function(strLength) {
     } else {
         return false;
     };
+};
+
+
+helpers.sendTwilioSms = function(phone,msg,callback) {
+  phone = typeof(phone) == 'string' && phone.trim().length == 10 ? phone.trim() : false;
+  msg = typeof(msg) == 'string' && msg.trim().length > 0 && msg.trim().length < 1600 ? msg.trim() : false;
+
+  if(phone && msg) {
+    let payload = {
+      'From' : config.twilio.fromPhone,
+      'To' : '+36'+phone,
+      'Body' : msg
+    };
+
+    let stringPayload = querystring.stringify(payload);
+    let requestDetails = {
+      'protocol' : 'https:',
+      'hostname' : 'api.twilio.com',
+      'method' : 'POST',
+      'path' : '/2010-04-01/Accounts/'+config.twilio.accountSid+'/Messages.json',
+      'auth' : config.twilio.accountSid+':'+config.twilio.authToken,
+      'headers' : {
+        'Content-Type' : 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(stringPayload)
+      }
+    };
+
+    let req = https.request(requestDetails,function(res){
+      // Grab the status of the sent request
+      var status =  res.statusCode;
+      // Callback successfully if the request went through
+      if(status == 200 || status == 201){
+        callback(false);
+      } else {
+        callback('Status code returned was '+status);
+      }
+    });
+
+    req.on('error',function(e) {
+      callback(e);
+    });
+
+    req.write(stringPayload);
+
+    req.end();
+
+  } else {
+    callback('Given parameters invalid');
+  };
 };
 
 

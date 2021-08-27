@@ -6,6 +6,8 @@ const http = require('http');
 const helpers = require('./helpers');
 const url = require('url');
 const _logs = require('./logs');
+const util = require('util');
+const debug = util.debuglog('workers');
 
 
 const workers = {};
@@ -18,12 +20,12 @@ workers.gatherAllChecks = function() {
                     if(!err && originalCheckData) {
                         workers.validateCheckData(originalCheckData);
                     } else {
-                        console.log('Error reading check data');
+                        debug('Error reading check data');
                     };
                 });
             });
         } else {
-            console.log('Error while gathering checks');
+            debug('Error while gathering checks');
         };
     });  
 };
@@ -41,7 +43,7 @@ workers.validateCheckData = function(originalCheckData) {
     originalCheckData.state = typeof(originalCheckData.state) == 'string' && ['up','down'].indexOf(originalCheckData.state) > -1 ? originalCheckData.state : 'down';
     originalCheckData.lastChecked = typeof(originalCheckData.lastChecked) == 'number' && originalCheckData.lastChecked > 0 ? originalCheckData.lastChecked : false;
 
-    console.log(originalCheckData)
+    debug(originalCheckData)
     
       // If all checks pass, pass the data along to the next step in the process
       if(originalCheckData.Id &&
@@ -54,7 +56,7 @@ workers.validateCheckData = function(originalCheckData) {
           workers.performCheck(originalCheckData);
         } else {
           // If checks fail, log the error and fail silently
-          console.log("Error: one of the checks is not properly formatted. Skipping.");
+          debug("Error: one of the checks is not properly formatted. Skipping.");
         }
 };
 
@@ -135,10 +137,10 @@ workers.processCheckOutcome = function(originalCheckData,checkOutcome) {
             if(alertWarranted) {
                 workers.alertUserToStatusChange(newCheckData);
             } else {
-                console.log('Alert not warranted');
+                debug('Alert not warranted');
             };
        } else {
-           console.log('Error trying to save updade check')
+           debug('Error trying to save updade check')
        };
     });
 };
@@ -147,9 +149,9 @@ workers.alertUserToStatusChange = function(newCheckData) {
     let msg = `Alert: Your check for ${newCheckData.method.toUpperCase()} ${newCheckData.protocol}://${newCheckData.ur} is currently ${newCheckData.state}`;  
     helpers.sendTwilioSms(newCheckData.userPhone,msg,function(err) {
        if(!err) {
-        console.log('Success - user was alarted');
+        debug('Success - user was alarted');
        } else {
-        console.log('Error: could not sent sms alert to user ',err);
+        debug('Error: could not sent sms alert to user ',err);
        };
     });
 };
@@ -169,9 +171,9 @@ workers.log = function(originalCheckData,checkOutcome,state,alertWarranted,timeO
     let logFileName = originalCheckData.Id;
     _logs.append(logFileName,logString,function(err) {
         if(!err) {
-            console.log('logging to file succeded');
+            debug('logging to file succeded');
         } else {
-            console.log('logging to file failed');
+            debug('logging to file failed');
         };
     });
 };
@@ -192,18 +194,18 @@ workers.rotateLogs = function() {
                     if(!err) {
                         _logs.truncate(logId,function(err) {
                             if(!err) {
-                                console.log('Success truncating logfile');
+                                debug('Success truncating logfile');
                             } else {
-                                console.log('Error truncating logfile');
+                                debug('Error truncating logfile');
                             };
                         });
                     } else {
-                        console.log('Error compressing one of the log files',err);
+                        debug('Error compressing one of the log files',err);
                     };
                 });
             });
         } else {
-            console.log('Error: could not find any logs to rotate');
+            debug('Error: could not find any logs to rotate');
         };
     });  
 };
@@ -215,6 +217,8 @@ workers.logRotationLoop = function() {
 };
 
 workers.init = function() {
+    console.log('\x1b[33m%s\x1b[0m','Background workers are running');
+
     workers.gatherAllChecks();
     
     workers.loop();

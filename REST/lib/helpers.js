@@ -3,6 +3,8 @@ const config = require('./config');
 const crypto = require('crypto');
 const https = require('https');
 const querystring = require('querystring');
+const path = require('path');
+const fs = require('fs');
 
 // Container for all the helpers
 const helpers = {};
@@ -91,6 +93,69 @@ helpers.sendTwilioSms = function(phone,msg,callback) {
   } else {
     callback('Given parameters invalid');
   };
+};
+
+
+helpers.getTemplate = function(templateName,data,callback) {
+  templateName = typeof(templateName) == 'string' && templateName.length > 0 ? templateName : false;
+  data = typeof(data) == 'object' && data !== null ? data : {};
+  if(templateName) {
+    
+    let templatesDir = path.join(__dirname+'/../templates');
+
+    fs.readFile(templatesDir+'/'+templateName+'.html','utf8',function(err,str) {
+      if(!err && str && str.length > 0) {
+        let finalString = helpers.interpolate(str,data);
+        callback(false,finalString);
+      } else {
+        callback('No template could be found');
+      };
+    });
+  } else {
+    callback('A valid templatename was not specified');
+  };
+};
+
+
+helpers.addUniversalTemplates = function(str,data,callback) {
+  str = typeof(str) == 'string' && str.length > 0 ? str : '';
+  data = typeof(data) == 'object' && data !== null ? data : {};
+  
+  helpers.getTemplate('_header',data,function(err,headerString) {
+      if(!err && headerString) {
+        helpers.getTemplate('_footer',data,function(err,footerString) {
+            if(!err && footerString) {
+              let fullString = headerString + str + footerString;
+              callback(false,fullString);
+            } else {
+              callback('Error: could not find the footer template');
+            };
+        });
+      } else {
+        callback('Could not find the header template');
+      }
+  });
+};
+
+
+helpers.interpolate = function(str,data) {
+    str = typeof(str) == 'string' && str.length > 0 ? str : '';
+    data = typeof(data) == 'object' && data !== null ? data : {};
+
+    for(let keyName in config.templateGlobals) {
+      if(config.templateGlobals.hasOwnProperty(keyName)) {
+        data['global.'+keyName] = config.templateGlobals[keyName];
+      };
+    };
+
+    for(let key in data) {
+      if(data.hasOwnProperty(key) && typeof(data[key]) == 'string') {
+        let replace = data[key];
+        let find = '{' + key + '}';
+        str = str.replace(find,replace);
+      };
+    };
+    return str;
 };
 
 

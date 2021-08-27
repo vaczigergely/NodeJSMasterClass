@@ -68,27 +68,32 @@ server.unifiedServer = function(req,res) {
         };
   
         // Route the request to the handler specified in the router
-        chosenHandler(data,function(statusCode,payload){
+        chosenHandler(data,function(statusCode,payload,contentType){
   
-          // Use the status code returned from the handler, or set the default status code to 200
-          statusCode = typeof(statusCode) == 'number' ? statusCode : 200;
-  
-          // Use the payload returned from the handler, or set the default payload to an empty object
-          payload = typeof(payload) == 'object'? payload : {};
-  
-          // Convert the payload to a string
-          const payloadString = JSON.stringify(payload);
-  
-          // Return the response
-          res.setHeader('Content-Type', 'application/json');
-          res.writeHead(statusCode);
-          res.end(payloadString);
+            contentType = typeof(contentType) == 'string' ? contentType : 'json';
 
-          if(statusCode == 200){
-            debug('\x1b[32m%s\x1b[0m',method.toUpperCase()+' /'+trimmedPath+' '+statusCode);
-          } else {
-            debug('\x1b[31m%s\x1b[0m',method.toUpperCase()+' /'+trimmedPath+' '+statusCode);
-          };
+            // Use the status code returned from the handler, or set the default status code to 200
+            statusCode = typeof(statusCode) == 'number' ? statusCode : 200;
+
+            let payloadString = '';
+            if(contentType == 'json') {
+                res.setHeader('Content-Type', 'application/json');
+                payload = typeof(payload) == 'object'? payload : {};
+                payloadString = JSON.stringify(payload);
+            }
+            if(contentType == 'html') {
+                res.setHeader('Content-Type', 'text/html');
+                payloadString = typeof(payload) == 'string' ? payload : '';
+            }
+
+            res.writeHead(statusCode);
+            res.end(payloadString);
+
+            if(statusCode == 200){
+                debug('\x1b[32m%s\x1b[0m',method.toUpperCase()+' /'+trimmedPath+' '+statusCode);
+            } else {
+                debug('\x1b[31m%s\x1b[0m',method.toUpperCase()+' /'+trimmedPath+' '+statusCode);
+            };
         });
   
     });
@@ -96,10 +101,19 @@ server.unifiedServer = function(req,res) {
 
 
 server.router = {
+    '' : handlers.index,
+    'account/create' : handlers.accountCreate,
+    'account/edit' : handlers.accountEdit,
+    'account/deleted' : handlers.accountDeleted,
+    'session/create' : handlers.sessionCreate,
+    'session/deleted' : handlers.sessionDeleted,
+    'checks/all' : handlers.checksList,
+    'checks/create' : handlers.checksCreate,
+    'checks/edit' : handlers.checksEdit,
     'ping' : handlers.ping,
-    'users' : handlers.users,
-    'tokens' : handlers.tokens,
-    'checks' : handlers.checks
+    'api/users' : handlers.users,
+    'api/tokens' : handlers.tokens,
+    'api/checks' : handlers.checks
 };
 
 server.init = function() {

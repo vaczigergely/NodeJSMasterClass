@@ -4,6 +4,37 @@ const helpers = require('./helpers');
 
 const handlers = {};
 
+handlers.index = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'Title',
+            'head.description' : 'Description',
+            'body.title' : 'Hello from templated',
+            'body.class' : 'index'
+        };
+
+        helpers.getTemplate('index',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+
+//
+
 handlers.users = function(data, callback) {
     const acceptableMethods = ['post', 'get', 'put', 'delete'];
     if(acceptableMethods.indexOf(data.method) > -1) {

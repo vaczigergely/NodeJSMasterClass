@@ -5,6 +5,7 @@ const https = require('https');
 const http = require('http');
 const helpers = require('./helpers');
 const url = require('url');
+const _logs = require('./logs');
 
 
 const workers = {};
@@ -119,9 +120,15 @@ workers.processCheckOutcome = function(originalCheckData,checkOutcome) {
     let state = !checkOutcome.error && checkOutcome.responseCode && originalCheckData.successCodes.indexOf(checkOutcome.responseCode) > -1 ? 'up' : 'down';  
     let alertWarranted = originalCheckData.lastChecked && originalCheckData.state !== state ? true : false;
 
+    let timeOfCheck = Date.now();
+    workers.log(originalCheckData,checkOutcome,state,alertWarranted,timeOfCheck);
+    
     let newCheckData = originalCheckData;
     newCheckData.state = state;
-    newCheckData.lastChecked = Date.now();
+    newCheckData.lastChecked = timeOfCheck;
+
+
+    
 
     _data.update('checks',newCheckData.Id,newCheckData,function(err) {
        if(!err) {
@@ -148,16 +155,72 @@ workers.alertUserToStatusChange = function(newCheckData) {
 };
 
 
+workers.log = function(originalCheckData,checkOutcome,state,alertWarranted,timeOfCheck) {
+    let logData = {
+        'check' : originalCheckData,
+        'outcome' : checkOutcome,
+        'state' : state,
+        'alert' : alertWarranted,
+        'time' : timeOfCheck
+    };
+
+    let logString = JSON.stringify(logData);
+
+    let logFileName = originalCheckData.Id;
+    _logs.append(logFileName,logString,function(err) {
+        if(!err) {
+            console.log('logging to file succeded');
+        } else {
+            console.log('logging to file failed');
+        };
+    });
+};
+
 workers.loop = function() {
     setInterval(() => {
         workers.gatherAllChecks();
     }, 1000 * 60);
 };
 
+workers.rotateLogs = function() {
+    _logs.list(false,function(err,logs) {
+        if(!err && logs && logs.length > 0) {
+            logs.forEach(function(logName) {
+                let logId = logName.replace('.log','');
+                let newFileId = logId+'-'+Date.now();
+                _logs.compress(logId,newFileId,function(err) {
+                    if(!err) {
+                        _logs.truncate(logId,function(err) {
+                            if(!err) {
+                                console.log('Success truncating logfile');
+                            } else {
+                                console.log('Error truncating logfile');
+                            };
+                        });
+                    } else {
+                        console.log('Error compressing one of the log files',err);
+                    };
+                });
+            });
+        } else {
+            console.log('Error: could not find any logs to rotate');
+        };
+    });  
+};
+
+workers.logRotationLoop = function() {
+    setInterval(() => {
+        workers.rotateLogs();
+    }, 1000 * 60 * 60 * 24);
+};
+
 workers.init = function() {
     workers.gatherAllChecks();
     
     workers.loop();
+
+    workers.rotateLogs();
+    workers.logRotationLoop();
 };
 
 

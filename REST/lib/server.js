@@ -137,7 +137,8 @@ server.router = {
     'api/tokens' : handlers.tokens,
     'api/checks' : handlers.checks,
     'favicon.ico' : handlers.favicon,
-    'public' : handlers.public
+    'public' : handlers.public,
+    'examples/error' : handlers
 };
 
 server.init = function() {

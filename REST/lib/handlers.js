@@ -10,13 +10,230 @@ handlers.index = function(data,callback) {
     if(data.method == 'get') {
 
         let templateData = {
-            'head.title' : 'Title',
-            'head.description' : 'Description',
-            'body.title' : 'Hello from templated',
+            'head.title' : 'Uptime Monitoring',
+            'head.description' : 'Uptime Monitoring for http and https sites',
             'body.class' : 'index'
         };
 
         helpers.getTemplate('index',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+
+handlers.accountCreate = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'Create an account',
+            'head.description' : 'Signup is easy',
+            'body.class' : 'accountCreate'
+        };
+
+        helpers.getTemplate('accountCreate',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+handlers.sessionCreate = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'Login to your account',
+            'head.description' : 'Enter phone number and password',
+            'body.class' : 'sessionCreate'
+        };
+
+        helpers.getTemplate('sessionCreate',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+handlers.sessionDeleted = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'Logged out',
+            'head.description' : 'You have been logged out',
+            'body.class' : 'sessionDeleted'
+        };
+
+        helpers.getTemplate('sessionDeleted',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+
+handlers.accountEdit = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'Account Settings',
+            'body.class' : 'accountEdit'
+        };
+
+        helpers.getTemplate('accountEdit',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+handlers.checksCreate = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'create a new check',
+            'body.class' : 'checksCreate'
+        };
+
+        helpers.getTemplate('checksCreate',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+
+handlers.checksEdit = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'Edit your checks',
+            'body.class' : 'checksEdit'
+        };
+
+        helpers.getTemplate('checksEdit',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+
+handlers.checksList = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'List of your checks',
+            'head.description' : 'List of your checks',
+            'body.class' : 'checksList'
+        };
+
+        helpers.getTemplate('checksList',templateData,function(err,str) {
+            if(!err && str) {
+                helpers.addUniversalTemplates(str,templateData,function(err,str) {
+                    if(!err && str) {
+                        callback(200,str,'html');
+                    } else {
+                        callback(500,undefined,'html');
+                    };
+                });
+            } else {
+                callback(500,undefined,'html');
+            };
+        });
+    } else {
+        callback(405,undefined,'html');
+    };
+};
+
+
+handlers.accountDeleted = function(data,callback) {
+    if(data.method == 'get') {
+
+        let templateData = {
+            'head.title' : 'Account deleted',
+            'head.description' : 'Account has been deleted',
+            'body.class' : 'accountDeleted'
+        };
+
+        helpers.getTemplate('accountDeleted',templateData,function(err,str) {
             if(!err && str) {
                 helpers.addUniversalTemplates(str,templateData,function(err,str) {
                     if(!err && str) {
@@ -85,6 +302,7 @@ handlers.public = function(data,callback) {
 //
 
 handlers.users = function(data, callback) {
+    
     const acceptableMethods = ['post', 'get', 'put', 'delete'];
     if(acceptableMethods.indexOf(data.method) > -1) {
         handlers._users[data.method](data, callback);
@@ -140,8 +358,9 @@ handlers._users.post = function(data,callback) {
 handlers._users.get = function(data,callback) {
     const phone = typeof(data.queryStringObject.phone) == "string" && data.queryStringObject.phone.trim().length == 10 ? data.queryStringObject.phone.trim() : false;
     if(phone) {
-
+        
         const token = typeof(data.headers.token) == 'string' ? data.headers.token : false;
+        
         handlers._tokens.verifyToken(token,phone,function(tokenIsValid) {
             if(tokenIsValid) {
                 _data.read('users',phone,function(err,data) {
@@ -317,13 +536,12 @@ handlers._tokens.post = function(data,callback) {
 
 handlers._tokens.get = function(data,callback) {
     const id = typeof(data.queryStringObject.id) == "string" && data.queryStringObject.id.trim().length <= 19 ? data.queryStringObject.id.trim() : false;
-    console.log(id)
     if(id) {
         _data.read('tokens',id,function(err,tokenData) {
             if(!err && tokenData) {
                 callback(200,tokenData);
             } else {
-                callback(404);
+                callback(404,err);
             };
         })
     } else {
@@ -386,7 +604,7 @@ handlers._tokens.delete = function(data,callback) {
 handlers._tokens.verifyToken = function(id,phone,callback) {
     _data.read('tokens',id,function(err,tokenData) {
         if(!err && tokenData) {
-            if(tokenData[phone] == phone && tokenData.expires > Date.now()) {
+            if(tokenData.phone == phone && tokenData.expires > Date.now()) {
                 callback(true);
             } else {
                 callback(false);

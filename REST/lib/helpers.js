@@ -159,6 +159,22 @@ helpers.interpolate = function(str,data) {
 };
 
 
+helpers.getStaticAsset = function(fileName,callback) {
+  fileName = typeof(fileName) == 'string' && fileName.length > 0 ? fileName : false; 
+  if(fileName) {
+      let publicDir = path.join(__dirname,'/../public/');
+      fs.readFile(publicDir + fileName, function(err,data) {
+          if(!err && data) {
+              callback(false,data);
+          } else {
+              callback('No file could be found');
+          ;}
+      });
+  } else {
+      callback('A valid filename was not specified');
+  };
+};
+
 
 // Export the module
 module.exports = helpers;

@@ -59,39 +59,216 @@ e.on('more log info',function(str) {
 cli.responders = {};
 
 cli.responders.help = function() {
-    console.log('You asked for help');  
+     let commands = {
+        'exit' : 'Kill the CLI',
+        'man' : 'Show this help page',
+        'help' : 'Alias of the man command',
+        'stats' : 'Gets statistics',
+        'list users' : 'Show a list of all registered users',
+        'more user info --{userId}' : 'Show details of a specific user',
+        'list checks --up --down' : 'List of all the actice checks',
+        'more check info --{checkId}' : 'Details of a check',
+        'list logs' : 'Show a list of all logfiles',
+        'more log info --{fileName}' : 'Show details of a logfile'
+     };
+
+     cli.horizontalLine();
+     cli.centered('CLI Manual');
+     cli.horizontalLine();
+     cli.verticalSpace(2);
+
+     for(let key in commands){
+        if(commands.hasOwnProperty(key)){
+           let value = commands[key];
+           let line = '\x1b[33m '+key+'\x1b[0m';
+           let padding = 60 - line.length;
+           for (i = 0; i < padding; i++) {
+               line+=' ';
+           }
+           line+=value;
+           console.log(line);
+           cli.verticalSpace();
+        }
+    }
+
+    cli.verticalSpace(1);
+    cli.horizontalLine();
 };
 
+cli.verticalSpace = function(lines) {
+    lines = typeof(lines) == 'number' && lines > 0 ? lines : 1;
+    for(i=0; i<lines; i++) {
+        console.log('');
+    }
+};
+
+
+cli.horizontalLine = function() {
+    let width = process.stdout.columns;
+    
+    let line = '';
+    for(i=0; i<width; i++) {
+        line+='-';
+    }
+    console.log(line);
+};
+
+
+cli.centered = function(str) {
+    str = typeof(str) == 'string' && str.trim().length > 0 ? str.trim() : '';
+    let width = process.stdout.columns;
+    let leftPadding = Math.floor((width-str.length) / 2);
+    let line = '';
+    for(i=0; i<leftPadding; i++) {
+        line+=' ';
+    }
+    line+= str;
+    console.log(line);
+}
+
+
 cli.responders.exit = function() {
-    console.log('You asked for exit');  
+    process.exit(0);  
 };
 
 cli.responders.stats = function() {
-    console.log('You asked for stats');  
+    let stats = {
+        'Load Average' : os.loadavg().join(' '),
+        'CPU Count' : os.cpus().length,
+        'Free Memory' : os.freemem(),
+        'Current Malloced Memory' : v8.getHeapStatistics().malloced_memory,
+        'Peak Malloced Memory' : v8.getHeapStatistics().peak_malloced_memory,
+        'Allocated Heap Used (%)' : Math.round((v8.getHeapStatistics().used_heap_size / v8.getHeapStatistics().total_heap_size) * 100),
+        'Available Heap Allocated (%)' : Math.round((v8.getHeapStatistics().total_heap_size / v8.getHeapStatistics().heap_size_limit) * 100),
+        'Uptime' : os.uptime()+' Seconds'
+    };  
+
+    cli.horizontalLine();
+    cli.centered('System Statistics');
+    cli.horizontalLine();
+    cli.verticalSpace(2);
+
+    for(let key in stats){
+        if(stats.hasOwnProperty(key)){
+           let value = stats[key];
+           let line = '\x1b[33m '+key+'\x1b[0m';
+           let padding = 60 - line.length;
+           for (i = 0; i < padding; i++) {
+               line+=' ';
+           }
+           line+=value;
+           console.log(line);
+           cli.verticalSpace();
+        }
+    }
+
+    cli.verticalSpace(1);
+    cli.horizontalLine();
 };
 
 cli.responders.listUsers = function() {
-    console.log('You asked for listUsers');  
+    _data.list('users',function(err,userIds) {
+        if(!err && userIds && userIds.length > 0) {
+            cli.verticalSpace();
+            userIds.forEach(function(userId) {
+                _data.read('users',userId,function(err,userData) {
+                    if(!err && userData) {
+                        let line = 'Name: '+userData.firstName+' '+userData.lastName+' Phone: '+userData.phone+' Checks: ';
+                        let numberOfChecks = typeof(userData.checks) == 'object' && userData.checks instanceof Array && userData.checks.length > 0 ? userData.checks.length : 0;
+                        line+= numberOfChecks;
+                        console.log(line);
+                        cli.verticalSpace();
+                    }
+                });
+            });
+        }
+    });
 };
 
 cli.responders.moreUserInfo = function(str) {
-    console.log('You asked for moreUserInfo');  
+    let arr = str.split('--');
+    let userId = typeof(arr[1]) == 'string' && arr[1].trim().length > 0 ? arr[1].trim() : false;
+    if(userId) {
+        _data.read('users',userId,function(err,userData) {
+            if(!err && userData) {
+                delete userData.hashedPassword;
+
+                cli.verticalSpace();
+                console.dir(userData,{'colors' : true});
+                cli.verticalSpace();
+            }
+        })
+    }
 };
 
 cli.responders.listChecks = function(str) {
-    console.log('You asked for listChecks');  
+    _data.list('checks',function(err,checkIds) {
+        if(!err && checkIds && checkIds.length > 0) {
+            cli.verticalSpace();
+            checkIds.forEach(function(checkId) {
+                _data.read('checks',checkId,function(err,checkData) {
+                    let includeCheck = false;
+                    let lowerString = str.toLowerCase();
+                    let state = typeof(checkData.state) == 'string' ? checkData.state : 'down';
+                    let stateOrUnknown = typeof(checkData.state) == 'string' ? checkData.state : 'unkown';
+
+                    if(lowerString.indexOf(`--${state}`) > -1 || (lowerString.indexOf('--down')) == -1 || (lowerString.indexOf('--up') == -1)) {
+                        let line = `ID: ${checkData.id} ${checkData.method.toUpperCase()} ${checkData.protocol}://${checkData.url} State: ${stateOrUnknown}`;
+                        console.log(line);
+                        cli.verticalSpace();
+                    }
+                })
+            })
+        }
+    });
 };
 
 cli.responders.moreCheckInfo = function(str) {
-    console.log('You asked for moreCheckInfo');  
+    let arr = str.split('--');
+    let checkId = typeof(arr[1]) == 'string' && arr[1].trim().length > 0 ? arr[1].trim() : false;
+    if(checkId) {
+        _data.read('checks',checkId,function(err,checkData) {
+            if(!err && checkData) {
+                cli.verticalSpace();
+                console.dir(checkData,{'colors' : true});
+                cli.verticalSpace();
+            }
+        })
+    }
 };
 
 cli.responders.listLogs = function() {
-    console.log('You asked for listLogs');  
+    _logs.list(true,function(err,logFileNames) {
+        if(!err && logFileNames && logFileNames.length > 0) {
+            cli.verticalSpace();
+            logFileNames.forEach(function(logFileName) {
+                if(logFileName.indexOf('-') > -1) {
+                    console.log(logFileName);
+                }
+            });
+            cli.verticalSpace();
+        }
+    }) 
 };
 
 cli.responders.moreLogInfo = function(str) {
-    console.log('You asked for moreLogInfo');  
+    let arr = str.split('--');
+    let logFileName = typeof(arr[1]) == 'string' && arr[1].trim().length > 0 ? arr[1].trim() : false;
+    if(logFileName) {
+        cli.verticalSpace();
+        _logs.decompress(logFileName,function(err,strData) {
+            if(!err && strData) {
+                let arr = strData.split('\n');
+                arr.forEach(function(jsonString) {
+                    let logObject = helpers.parseJsonToObject(jsonString);
+                    if(logObject && JSON.stringify(logObject) !== '{}') {
+                        console.dir(logObject,{'colors' : true});
+                        cli.verticalSpace();
+                    }
+                });
+            } 
+        });
+    }
 };
 
 

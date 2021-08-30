@@ -3,6 +3,11 @@ const path = require('path');
 const config = require('./config');
 const _data = require('./data');
 const helpers = require('./helpers');
+const { URL } = require('url');
+const dns = require('dns');
+const { performance, PerformanceObserver } = require('perf_hooks');
+const util = require('util');
+const debug = util.debuglog('performance');
 
 const handlers = {};
 
@@ -497,15 +502,21 @@ handlers.tokens = function(data, callback) {
 handlers._tokens = {};
 
 handlers._tokens.post = function(data,callback) {
+    performance.mark('entered function');
     const phone = typeof(data.payload.phone) == 'string' && data.payload.phone.trim().length == 10 ? data.payload.phone.trim() : false;
     const password = typeof(data.payload.password) == 'string' && data.payload.password.trim().length > 0 ? data.payload.password.trim() : false;
-    
+    performance.mark('inputs validated');
     if(phone && password) {
+        performance.mark('beginning user lookup');
         _data.read('users',phone,function(err,userData) {
+            performance.mark('user lookup done');
             if(!err && userData) {
+                performance.mark('beginning password hashing');
                 const hashedPassword = helpers.hash(password);
+                performance.mark('finished password hashing');
                 if(hashedPassword == userData.password) {
                     //TODO Why it is giving back 19 characters instead of 20
+                    performance.mark('creating data for the token');
                     const tokenId = helpers.createRandomString(20);
                     const expires =Date.now() * 1000 * 60 * 60;
                     const tokenObject = {
@@ -514,7 +525,23 @@ handlers._tokens.post = function(data,callback) {
                         'expires' : expires
                     }
 
+                    performance.mark('beginning storing token');
                     _data.create('tokens',tokenId,tokenObject,function(err) {
+                        performance.mark('storing token complete');
+
+                        const obs = new PerformanceObserver((list, observer) => {
+                            console.log(list.getEntriesByType('measure'));
+                            observer.disconnect();
+                        });
+                        obs.observe({ entryTypes: ['measure'], buffered: true });
+
+                        performance.measure('Beginning to end','entered function','storing token complete');
+                        performance.measure('Validating user input','entered function','inputs validated');
+                        performance.measure('User lookup','beginning user lookup','user lookup done');
+                        performance.measure('Password hasing','beginning password hashing','finished password hashing');
+                        performance.measure('Token data creation','creating data for the token','beginning storing token');
+                        performance.measure('Token storing','beginning storing token','storing token complete');
+
                         if(!err) {
                             callback(200,tokenObject);
                         } else {
@@ -647,35 +674,42 @@ handlers._checks.post = function(data,callback) {
                         let userChecks = typeof(userData.checks) == 'object' && userData.checks instanceof Array ? userData.checks : [];
 
                         if(userChecks.length < config.maxChecks) {
-                            let checkId = helpers.createRandomString(20);
+                            let parsedUrl = new URL(protocol+'://'+url,true);
+                            let hostName = typeof(parsedUrl.hostname) == 'string' && parsedUrl.hostname.length > 0 ? parsedUrl.hostname : false;
+                            dns.resolve(hostName,function(err,records) {
+                                if(!err && records) {
+                                    let checkId = helpers.createRandomString(20);
 
-                            let checkObject = {
-                                'Id' : checkId,
-                                'userPhone' : userPhone,
-                                'protocol' : protocol,
-                                'url' : url,
-                                'method' : method,
-                                'succesCodes' : successCodes,
-                                'timeoutSeconds' : timeoutSeconds
-                            };
+                                    let checkObject = {
+                                        'Id' : checkId,
+                                        'userPhone' : userPhone,
+                                        'protocol' : protocol,
+                                        'url' : url,
+                                        'method' : method,
+                                        'succesCodes' : successCodes,
+                                        'timeoutSeconds' : timeoutSeconds
+                                    };
 
-                            _data.create('checks',checkId,checkObject,function(err){
-                                if(!err) {
-                                    userData.checks = userChecks;
-                                    userData.checks.push(checkId);
-
-                                    _data.update('users',userPhone,userData,function(err) {
+                                    _data.create('checks',checkId,checkObject,function(err){
                                         if(!err) {
-                                            callback(200,checkObject);
-                                        } else {
-                                            callback(500,{ 'Error' : 'Could not update the user' });
-                                        };
-                                    })
-                                } else {
-                                    callback(500,{ 'Error' : 'Could not create new check' });
-                                };
-                            })
+                                            userData.checks = userChecks;
+                                            userData.checks.push(checkId);
 
+                                            _data.update('users',userPhone,userData,function(err) {
+                                                if(!err) {
+                                                    callback(200,checkObject);
+                                                } else {
+                                                    callback(500,{ 'Error' : 'Could not update the user' });
+                                                };
+                                            })
+                                        } else {
+                                            callback(500,{ 'Error' : 'Could not create new check' });
+                                        };
+                                    });
+                                } else {
+                                    callback(400,{ 'Error' : 'Unknown host'});
+                                }
+                            });
                         } else {
                             callback(400, { 'Error' : 'Max number of checks reached' });
                         };

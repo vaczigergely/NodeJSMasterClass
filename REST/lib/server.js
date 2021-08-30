@@ -13,12 +13,9 @@ const debug = util.debuglog('server');
 const server = {};
 
 
-
 server.httpServer = http.createServer(function(req, res) {
     server.unifiedServer(req,res);
 });
-
-
 
 
 server.httpsServerOptions = {
@@ -28,7 +25,6 @@ server.httpsServerOptions = {
 server.httpsServer = https.createServer(server.httpsServerOptions,function(req, res) {
     server.unifiedServer(req,res);
 });
-
 
 
 server.unifiedServer = function(req,res) {
@@ -78,10 +74,9 @@ server.unifiedServer = function(req,res) {
             debug(e);
             server.processHandlerResponse(es,method,trimmedPath,500,{'Error' : 'An unknown error has occured'},'json');
         }
-        
-  
     });
 };
+
 
 server.processHandlerResponse = function(res,method,trimmedPath,statusCode,payload,contentType) {
     contentType = typeof(contentType) == 'string' ? contentType : 'json';
@@ -150,6 +145,7 @@ server.router = {
     'examples/error' : handlers.exampleError
 };
 
+
 server.init = function() {
     server.httpServer.listen(config.httpPort, function() {
         console.log('\x1b[36m%s\x1b[0m',`The server is listening on port ${config.httpPort} in ${config.envName} mode`);
@@ -159,5 +155,6 @@ server.init = function() {
         console.log('\x1b[35m%s\x1b[0m',`The server is listening on port ${config.httpsPort} in ${config.envName} mode`);
     });
 };
+
 
 module.exports = server;

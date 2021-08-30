@@ -238,18 +238,24 @@ cli.responders.moreCheckInfo = function(str) {
 };
 
 cli.responders.listLogs = function() {
-    _logs.list(true,function(err,logFileNames) {
-        if(!err && logFileNames && logFileNames.length > 0) {
-            cli.verticalSpace();
-            logFileNames.forEach(function(logFileName) {
-                if(logFileName.indexOf('-') > -1) {
-                    console.log(logFileName);
-                }
-            });
-            cli.verticalSpace();
-        }
-    }) 
+    let ls = childProcess.spawn('ls', ['./.logs/']);
+    ls.stdout.on('data', function(dataObject) {
+        let dataStr = dataObject.toString();
+        let logFileNames = dataStr.split('\n');
+
+        cli.verticalSpace();
+        logFileNames.forEach(function(logFileName) {
+            if(typeof(logFileName) == 'string' && logFileName.length > 0 && logFileName.indexOf('-') > -1) {
+                console.log(logFileName.trim().split('.')[0]);
+                cli.verticalSpace();
+            }
+        });
+    });
 };
+
+
+
+
 
 cli.responders.moreLogInfo = function(str) {
     let arr = str.split('--');

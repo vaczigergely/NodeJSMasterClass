@@ -9,6 +9,13 @@ const fs = require('fs');
 // Container for all the helpers
 const helpers = {};
 
+
+// Sample for testing
+helpers.getANumber = function() {
+    return 1;
+};
+
+
 // Parse a JSON string to an object in all cases, without throwing
 helpers.parseJsonToObject = function(str){
   try{

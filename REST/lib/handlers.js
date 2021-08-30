@@ -832,6 +832,11 @@ handlers._checks.delete = function(data,callback) {
     };
 };
 
+handlers.exampleError = function(data,callback) {
+    let err = new Error('Example error');
+    throw(err);
+};
+
 
 handlers.ping = function(data, callback) {
     callback(200);
